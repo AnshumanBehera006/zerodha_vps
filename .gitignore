@@ -2,4 +2,8 @@ node_modules/
 .env
 .env*.local
 .DS_Store
+build/
+caddy_data/
+caddy_config/
+
 

@@ -1,0 +1,29 @@
+{
+    # Global options
+    admin off
+}
+
+# Backend API
+{$API_DOMAIN:api.localhost} {
+    encode gzip zstd
+
+    reverse_proxy backend:3002 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+# Dashboard Application
+{$DASHBOARD_DOMAIN:dashboard.localhost} {
+    encode gzip zstd
+    reverse_proxy dashboard:3001
+}
+
+# Main Frontend
+{$FRONTEND_DOMAIN:localhost} {
+    encode gzip zstd
+    reverse_proxy frontend:3000
+}
+

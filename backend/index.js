@@ -55,6 +55,11 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Health check
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
+});
+
 // ─── Auth Routes ────────────────────────────────────────────────────────
 app.post("/signup", authLimiter, signupValidation, signup);
 app.post("/login", authLimiter, loginValidation, login);

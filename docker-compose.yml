@@ -1,0 +1,97 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zerodha_backend
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3002
+      - MONGO_URL=${MONGO_URL}
+      - TOKEN_KEY=${TOKEN_KEY}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:3001}
+    networks:
+      - zerodha_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:3002}
+        REACT_APP_DASHBOARD_URL: ${REACT_APP_DASHBOARD_URL:-http://localhost:3001}
+    container_name: zerodha_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - zerodha_net
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:3002}
+        REACT_APP_FRONTEND_URL: ${REACT_APP_FRONTEND_URL:-http://localhost:3000}
+    container_name: zerodha_dashboard
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    networks:
+      - zerodha_net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: zerodha_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - FRONTEND_DOMAIN=${FRONTEND_DOMAIN:-localhost}
+      - DASHBOARD_DOMAIN=${DASHBOARD_DOMAIN:-dashboard.localhost}
+      - API_DOMAIN=${API_DOMAIN:-api.localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+      dashboard:
+        condition: service_healthy
+    networks:
+      - zerodha_net
+
+  # Optional local MongoDB container (Uncomment if NOT using MongoDB Atlas):
+  # mongodb:
+  #   image: mongo:6
+  #   container_name: zerodha_mongodb
+  #   restart: unless-stopped
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=admin
+  #     - MONGO_INITDB_ROOT_PASSWORD=secretpassword
+  #   volumes:
+  #     - mongo_data:/data/db
+  #   networks:
+  #     - zerodha_net
+
+networks:
+  zerodha_net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  # mongo_data: # Uncomment if using local mongodb service
+
