@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install dependencies based on lockfile
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copy application source code
 COPY . .
